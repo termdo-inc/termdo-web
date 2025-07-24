@@ -1,18 +1,29 @@
-.container {
+.main {
   height: 100vh;
+  width: 100vw;
   background-color: #2E2A24;
   color: #F9D094;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding-inline: 64px;
   gap: 2rem;
 }
 
 .title {
-  font-size: 4rem;
+  font-size: 3rem;
+  font-family: Georgia, 'Times New Roman', Times, serif;
   font-weight: bold;
+  text-align: center;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 1rem;
+  font-family: Georgia, 'Times New Roman', Times, serif;
+  text-align: center;
+  color: #F9D09480; /* Slightly transparent for a softer look */
 }
 
 .terminalWrapper {
@@ -21,5 +32,6 @@
   padding: 16px;
   background-color: #201C17;
   border-radius: 12px;
+  border: 1px solid #F9D09439;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }

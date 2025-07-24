@@ -8,4 +8,7 @@ export default defineConfig({
     outDir: "out",
   },
   plugins: [react()],
+  server: {
+    port: 8080,
+  },
 });
