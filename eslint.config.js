@@ -9,7 +9,7 @@ import tseslint from "typescript-eslint";
 export default tseslint.config([
   globalIgnores(["out"]),
   {
-    files: ["source/**/*", "vite.config.ts"],
+    files: ["source/**/*.ts", "source/**/*,tsx", "vite.config.ts"],
     extends: [
       eslint.configs.all,
       tseslint.configs.strictTypeChecked,

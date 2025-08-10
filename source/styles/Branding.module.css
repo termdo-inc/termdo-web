@@ -1,0 +1,172 @@
+.branding-container {
+  width: 100%;
+  max-width: 1000px;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: stretch;
+
+  gap: var(--spacing-md);
+
+  padding-block-end: var(--spacing-2xl);
+
+  transition:
+    gap var(--transition-medium),
+    padding-block-end var(--transition-medium),
+    padding-inline-end var(--transition-medium);
+}
+
+.logo {
+  width: 100px;
+  height: auto;
+
+  order: 1;
+
+  display: block;
+
+  filter: drop-shadow(var(--shadow-lg));
+
+  -webkit-user-drag: none;
+
+  transition:
+    width var(--transition-medium),
+    drop-shadow var(--transition-medium),
+    filter var(--transition-medium);
+}
+
+.branding-text {
+  order: 2;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+
+  transition:
+    align-items var(--transition-medium),
+    text-align var(--transition-medium);
+}
+
+.title {
+  font-size: 4.5rem;
+
+  line-height: 1;
+
+  transition:
+    font-size var(--transition-medium),
+    line-height var(--transition-medium),
+    text-shadow var(--transition-medium);
+}
+
+.subtitle {
+  font-size: 1.2rem;
+  line-height: 1;
+
+  color: var(--color-foreground-muted);
+
+  transition:
+    font-size var(--transition-medium),
+    line-height var(--transition-medium),
+    text-shadow var(--transition-medium);
+}
+
+@media (max-width: 800px) and (min-height: 600px) {
+  .branding-container {
+    flex-direction: column;
+    align-items: center;
+
+    gap: var(--spacing-xs);
+
+    padding-block-end: var(--spacing-lg);
+  }
+
+  .branding-text {
+    align-items: center;
+    text-align: center;
+  }
+
+  .logo {
+    width: 75px;
+
+    filter: drop-shadow(var(--shadow-md));
+  }
+
+  .title {
+    font-size: 3rem;
+    line-height: 1.3;
+
+    text-shadow: var(--shadow-lg);
+  }
+
+  .subtitle {
+    font-size: 1rem;
+  }
+}
+
+@media (max-height: 600px) {
+  .branding-container {
+    flex: 0;
+
+    flex-direction: column;
+    gap: var(--spacing-sm);
+
+    padding-block-end: 0;
+    padding-inline-end: var(--spacing-md);
+
+    mask-image: linear-gradient(to top, #000 90%, transparent);
+  }
+
+  .logo {
+    width: 50px;
+
+    order: 2;
+
+    transform: rotate(-90deg);
+
+    filter: drop-shadow(var(--shadow-sm));
+  }
+
+  .branding-text {
+    order: 1;
+
+    min-height: 0;
+
+    flex-direction: row;
+  }
+
+  .title {
+    font-size: 2.25rem;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    writing-mode: sideways-lr;
+  }
+
+  .subtitle {
+    font-size: 0.75rem;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    writing-mode: sideways-lr;
+  }
+}
+
+@media (max-height: 300px) {
+  .branding-container {
+    padding-block-end: var(--spacing-sm);
+  }
+
+  .logo {
+    width: 32px;
+  }
+
+  .title {
+    font-size: 1.4rem;
+
+    text-shadow: none;
+  }
+
+  .subtitle {
+    font-size: 0.6rem;
+  }
+}
