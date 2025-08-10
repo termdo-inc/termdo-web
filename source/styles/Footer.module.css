@@ -10,6 +10,8 @@
   align-items: center;
 
   gap: var(--spacing-md);
+
+  transition: max-width var(--transition-medium);
 }
 
 .footer-logo {
@@ -29,6 +31,12 @@
   color: var(--color-background);
 
   transition: font var(--transition-medium);
+}
+
+@media (min-width: 1600px) {
+  .footer-container {
+    max-width: 1200px;
+  }
 }
 
 @media (min-height: 1000px) {

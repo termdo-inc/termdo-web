@@ -14,6 +14,7 @@
   background-color: var(--color-layer1);
 
   transition:
+    max-width var(--transition-medium),
     max-height var(--transition-medium),
     box-shadow var(--transition-medium);
 }
@@ -21,6 +22,12 @@
 .terminal {
   width: 100%;
   height: 100%;
+}
+
+@media (min-width: 1600px) {
+  .terminal-container {
+    max-width: 1200px;
+  }
 }
 
 @media (min-height: 1000px) {

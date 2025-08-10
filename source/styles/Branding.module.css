@@ -12,9 +12,9 @@
   padding-block-end: var(--spacing-2xl);
 
   transition:
+    max-width var(--transition-medium),
     gap var(--transition-medium),
-    padding-block-end var(--transition-medium),
-    padding-inline-end var(--transition-medium);
+    padding var(--transition-medium);
 }
 
 .logo {
@@ -100,6 +100,12 @@
 
   .subtitle {
     font-size: 1rem;
+  }
+}
+
+@media (min-width: 1600px) {
+  .branding-container {
+    max-width: 1200px;
   }
 }
 

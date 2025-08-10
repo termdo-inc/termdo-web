@@ -115,9 +115,7 @@ main {
   padding-inline: var(--spacing-3xl);
   padding-block: var(--spacing-lg);
 
-  transition:
-    padding-inline var(--transition-medium),
-    padding-block var(--transition-medium);
+  transition: padding var(--transition-medium);
 }
 
 footer {
