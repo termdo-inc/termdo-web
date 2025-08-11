@@ -6,9 +6,10 @@
   /* Colors */
   --color-accent: rgb(190, 134, 45);
   --color-foreground: rgb(249, 208, 148);
-  --color-foreground-muted: rgba(249, 208, 148, 0.6);
+  --color-foreground-muted: rgba(249, 208, 148, 0.56);
   --color-background: rgb(46, 42, 36);
   --color-layer1: rgb(32, 28, 23);
+  --color-flyout: rgba(249, 208, 148, 0.16);
   --color-border: rgba(249, 208, 148, 0.16);
 
   /* Fonts */
@@ -67,6 +68,9 @@
 
 html {
   color-scheme: dark;
+
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-flyout) transparent;
 }
 
 html,
@@ -201,4 +205,22 @@ h3 {
   footer {
     display: none;
   }
+}
+
+/*----------------------------------------------------------------------------*\
+*| XTerm Overrides                                                            |*
+\*----------------------------------------------------------------------------*/
+
+.xterm-viewport::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.xterm-viewport::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+.xterm-viewport::-webkit-scrollbar-thumb {
+  background-color: var(--color-flyout);
+  border-radius: 4px;
 }
