@@ -31,6 +31,10 @@ export default tseslint.config([
     },
     rules: {
       "sort-imports": "off",
+      "id-length": "off",
+      "no-magic-numbers": "off",
+      "@typescript-eslint/no-extraneous-class": "off",
+      "@typescript-eslint/restrict-template-expressions": "off",
     },
   },
 ]);
