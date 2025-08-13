@@ -3,7 +3,10 @@ import { Terminal as XTerm, type IDisposable } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { Component, createRef } from "react";
 import styles from "../styles/Terminal.module.css";
-import { Print } from "../terminal/Print";
+import { Command } from "../terminal/Command";
+import { Console } from "../terminal/Console";
+import { Input, type CommandParams } from "../terminal/Input";
+import { Key } from "../terminal/Key";
 
 export class Terminal extends Component {
   // Constants
@@ -39,15 +42,6 @@ export class Terminal extends Component {
   public get input() {
     return this._input;
   }
-  public get cursorPos() {
-    return this._cursorPos;
-  }
-  public get history() {
-    return this._history;
-  }
-  public get historyIndex() {
-    return this._historyIndex;
-  }
   public get prompt() {
     return `${this.username}@${Terminal.HOSTNAME}:${Terminal.CWD}$ `;
   }
@@ -58,15 +52,6 @@ export class Terminal extends Component {
   }
   public set input(value: string) {
     this._input = value;
-  }
-  public set cursorPos(value: number) {
-    this._cursorPos = value;
-  }
-  public set history(value: string[]) {
-    this._history = value;
-  }
-  public set historyIndex(value: number) {
-    this._historyIndex = value;
   }
 
   constructor(props: {}) {
@@ -93,6 +78,8 @@ export class Terminal extends Component {
       fontFamily: "Cascadia Code, monospace",
       fontSize: 14,
       lineHeight: 1.2,
+      cursorStyle: "bar",
+      cursorWidth: 2,
       theme: {
         background: "#201C17",
         foreground: "#CECDCC",
@@ -101,7 +88,7 @@ export class Terminal extends Component {
         selectionBackground: "#312E29",
         selectionForeground: "#CECDCC",
         selectionInactiveBackground: "#2D2A26",
-        black: "4D4945",
+        black: "#4D4945",
         brightBlack: "#706E6B",
         red: "#EF6363",
         brightRed: "#D19797",
@@ -130,8 +117,8 @@ export class Terminal extends Component {
     });
 
     // Initial prompt
-    Print.welcome(this);
-    Print.prompt(this);
+    Console.welcome(this);
+    Console.prompt(this);
 
     // Listeners
     this._onDataDisposer = this._term.onData(this.onData.bind(this));
@@ -148,85 +135,106 @@ export class Terminal extends Component {
   }
 
   override componentWillUnmount(): void {
-    // Cleanup
     this._onDataDisposer?.dispose();
     this._resizeObserver?.disconnect();
     this._fit?.dispose();
     this._term?.dispose();
-    window.removeEventListener("resize", this.onResize.bind(this));
   }
 
   // >-----------------------------< Methods  ------------------------------< //
 
-  private onResize() {
+  private onResize(): void {
     if (this._resizeFrameId !== 0) {
       return;
     }
     this._resizeFrameId = requestAnimationFrame(() => {
       this._resizeFrameId = 0;
       this._fit?.fit();
-      Print.prompt(this);
+      Console.prompt(this);
     });
   }
 
-  private onData(data: string) {
-    // handle data
+  private onData(data: string): void {
+    if (this._term === null) {
+      console.error("Terminal is not initialized.");
+      return;
+    }
+
+    switch (data) {
+      case Key.ENTER: {
+        Console.out(this, "");
+        const line = this.input.trim();
+        if (line.length > 0) {
+          if (this._history[0] !== line) {
+            this._history.unshift(line);
+          }
+        }
+        this._historyIndex = -1;
+        this.onCommand(Input.parse(line));
+        this._input = "";
+        this._cursorPos = 0;
+        Console.prompt(this);
+        break;
+      }
+      case Key.BACKSPACE: {
+        if (this._cursorPos > 0) {
+          this._input =
+            this._input.slice(0, this._cursorPos - 1) +
+            this._input.slice(this._cursorPos);
+          this._cursorPos -= 1;
+          Console.prompt(this);
+        }
+        break;
+      }
+      default: {
+        if (!data.startsWith("\x1b")) {
+          this._input =
+            this._input.slice(0, this._cursorPos) +
+            data +
+            this._input.slice(this._cursorPos);
+          this._cursorPos += data.length;
+
+          Console.prompt(this);
+        }
+        break;
+      }
+    }
+  }
+
+  private onCommand(params: CommandParams): void {
+    switch (params.command) {
+      case "": {
+        // Empty command, do nothing
+        return;
+      }
+      case "help": {
+        Command.help(this);
+        break;
+      }
+      case "clear": {
+        Console.clear(this);
+        return;
+      }
+      case "echo": {
+        Command.echo(this, params.args);
+        break;
+      }
+      default: {
+        Console.out(this, `Unknown command: ${params.command}`);
+        break;
+      }
+    }
+    Console.out(this, "");
   }
 }
 
 // export function Terminal2() {
-//   function repaintCurrentLine() {
-//     promptRender();
-//   }
-
-//   // ----- Parsing & pipeline -----
-//   function tokenize(line: string): string[][] {
-//     return line
-//       .split("|")
-//       .map((p) => p.trim())
-//       .filter((p) => p.length > 0)
-//       .map((p) => p.split(/\s+/));
-//   }
 
 //   // ----- onData readline -----
 //   function onData(io: IO) {
 //     return (data: string) => {
 //       const term = termRef.current;
 //       if (!term) return;
-
-//       // ENTER
-//       if (data === "\r") {
-//         term.write("\r\n");
-//         const line = inputRef.current;
-//         const trimmed = line.trim();
-//         if (trimmed && histRef.current[0] !== trimmed)
-//           histRef.current.unshift(trimmed);
-//         histIdxRef.current = -1;
-//         if (trimmed) {
-//           runPipeline(trimmed, io).finally(() => {
-//             inputRef.current = "";
-//             cursorRef.current = 0;
-//             promptRender();
-//           });
-//         } else {
-//           inputRef.current = "";
-//           cursorRef.current = 0;
-//           promptRender();
-//         }
-//         return;
-//       }
-
-//       // BACKSPACE (DEL)
-//       if (data === "\u007F") {
-//         if (cursorRef.current > 0) {
-//           inputRef.current =
-//             inputRef.current.slice(0, cursorRef.current - 1) +
-//             inputRef.current.slice(cursorRef.current);
-//           cursorRef.current -= 1;
-//           promptRender();
-//         }
-//         return;
-//       }
 
 //       // ESC sequences (arrows, home/end, alt combos)
 //       if (data.startsWith("\x1b")) {

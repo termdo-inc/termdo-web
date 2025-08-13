@@ -1,9 +1,13 @@
 import type { Terminal } from "../components/Terminal";
-import { IO } from "./IO";
+import { Console } from "./Console";
 
 export class Command {
   public static help(term: Terminal): void {
-    IO.writeln(term, "Available commands:");
-    IO.writeln(term, "  help - Show this help message");
+    Console.out(term, "Available commands:");
+    Console.out(term, "  help - Show this help message");
+  }
+
+  public static echo(term: Terminal, args: string[]): void {
+    Console.out(term, args.join(" "));
   }
 }

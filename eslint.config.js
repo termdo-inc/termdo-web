@@ -11,7 +11,7 @@ export default tseslint.config([
   {
     files: ["source/**/*.ts", "source/**/*,tsx", "vite.config.ts"],
     extends: [
-      eslint.configs.all,
+      eslint.configs.recommended,
       tseslint.configs.strictTypeChecked,
       tseslint.configs.stylisticTypeChecked,
       reactHooks.configs["recommended-latest"],
@@ -30,9 +30,6 @@ export default tseslint.config([
       reportUnusedDisableDirectives: true,
     },
     rules: {
-      "sort-imports": "off",
-      "id-length": "off",
-      "no-magic-numbers": "off",
       "@typescript-eslint/no-extraneous-class": "off",
       "@typescript-eslint/restrict-template-expressions": "off",
     },
