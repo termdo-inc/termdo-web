@@ -1,48 +1,84 @@
 import { Terminal } from "../components/Terminal";
-import { Styles } from "./Styles";
+import { Ansi } from "./Ansi";
+import { Style } from "./Styles";
 
 export class Console {
-  private static prevPromptLines = 0;
+  private static promptLines = 1;
+  private static cursorLine = this.promptLines;
 
   public static welcome(t: Terminal): void {
     Console.writeln(
       t,
-      `${Styles.BEGIN}${Styles.FG_BR_BLUE}${Styles.END}Welcome to termdo. Type \`help\` for commands.\r\n${Styles.RESET}`,
+      `${Style.WELCOME}Welcome to termdo. Type \`help\` for commands.\r\n`,
     );
   }
 
   public static prompt(t: Terminal) {
-    if (Console.prevPromptLines > 0) {
-      Console.write(t, "\r");
-      for (let i = 0; i < Console.prevPromptLines - 1; i++) {
-        Console.write(t, "\x1b[2K");
-        Console.write(t, "\x1b[F");
+    let out = "";
+
+    const downCount = this.promptLines - this.cursorLine;
+    if (downCount > 0) {
+      out += `\x1b[${downCount}B`;
+    }
+    if (Console.promptLines > 0) {
+      out += "\r";
+      for (let i = 0; i < Console.promptLines - 1; i++) {
+        out += "\x1b[2K\x1b[F";
       }
-      Console.write(t, "\x1b[2K");
+      out += "\x1b[2K";
     }
 
-    Console.write(
-      t,
-      `${Styles.BEGIN}${Styles.FG_YELLOW}${Styles.END}${t.username}${Styles.BEGIN}${Styles.FG_BR_GREEN}${Styles.END}@${Terminal.HOSTNAME}${Styles.BEGIN}${Styles.FG_CYAN}${Styles.END}:${Terminal.CWD}${Styles.BEGIN}${Styles.FG_BLUE}${Styles.END}$${Styles.RESET} `,
-    );
+    const promptColorized =
+      `${Style.PROMPT_USERNAME}${t.username}` +
+      `${Style.PROMPT_HOSTNAME}@${Terminal.HOSTNAME}` +
+      `${Style.PROMPT_CWD}:${Terminal.CWD}` +
+      `${Style.PROMPT_MARK}${Terminal.MARK} `;
+    out += promptColorized;
+    out += Console.colorize(t.input);
 
-    Console.write(t, Console.colorize(t.input));
+    const cols = Math.max(1, t.term.cols);
+    const totalLength = t.prompt.length + t.input.length;
+    Console.promptLines = Math.max(1, Math.ceil(totalLength / cols));
+    Console.cursorLine = Console.promptLines;
 
-    const cols = Math.max(1, t.term.cols || 1);
-    Console.prevPromptLines = Math.max(
-      1,
-      Math.ceil((t.prompt.length + t.input.length) / cols),
-    );
+    const targetCursorPos = t.prompt.length + t.cursorPos;
+    const endRow =
+      Math.floor(totalLength / cols) - (totalLength % cols === 0 ? 1 : 0);
+    const targetRow = Math.floor(targetCursorPos / cols);
+    const targetCol = (targetCursorPos % cols) + 1;
+
+    const upCount = endRow - targetRow;
+    if (upCount > 0) {
+      out += `\x1b[${upCount}A`;
+      this.cursorLine -= upCount;
+    }
+    out += `\x1b[${targetCol}G`;
+
+    Console.write(t, out);
   }
 
   public static out(t: Terminal, output: string): void {
-    Console.prevPromptLines = 0;
+    Console.promptLines = 1;
 
     Console.writeln(t, output);
   }
 
   public static clear(t: Terminal): void {
     Console.write(t, "\x1b[2J\x1b[0f");
+  }
+
+  public static moveCursorLeft(t: Terminal): void {
+    if (t.cursorPos > 0) {
+      t.cursorPos -= 1;
+      Console.write(t, "\x1b[D");
+    }
+  }
+
+  public static moveCursorRight(t: Terminal): void {
+    if (t.cursorPos < t.input.length) {
+      t.cursorPos += 1;
+      Console.write(t, "\x1b[C");
+    }
   }
 
   // >-----------------------------< Methods  ------------------------------< //
@@ -57,10 +93,10 @@ export class Console {
 
   private static colorize(input: string): string {
     const Style = {
-      cmd: `${Styles.BEGIN}${Styles.FG_BR_BLUE}${Styles.END}`,
-      opt: `${Styles.BEGIN}${Styles.FG_BR_GREEN}${Styles.END}`,
-      arg: `${Styles.BEGIN}${Styles.FG_BR_CYAN}${Styles.END}`,
-      val: `${Styles.BEGIN}${Styles.FG_BR_MAGENTA}${Styles.END}`,
+      cmd: `${Ansi.BEGIN}${Ansi.FG_BR_BLUE}${Ansi.END}`,
+      opt: `${Ansi.BEGIN}${Ansi.FG_BR_GREEN}${Ansi.END}`,
+      arg: `${Ansi.BEGIN}${Ansi.FG_BR_CYAN}${Ansi.END}`,
+      val: `${Ansi.BEGIN}${Ansi.FG_BR_MAGENTA}${Ansi.END}`,
     };
 
     let out = Style.cmd;
@@ -147,6 +183,6 @@ export class Console {
       out += ch;
     }
 
-    return out + Styles.RESET;
+    return out + Ansi.RESET;
   }
 }

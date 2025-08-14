@@ -3,6 +3,7 @@ import { Terminal as XTerm, type IDisposable } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { Component, createRef } from "react";
 import styles from "../styles/Terminal.module.css";
+import { Ansi } from "../terminal/Ansi";
 import { Command } from "../terminal/Command";
 import { Console } from "../terminal/Console";
 import { Input, type CommandParams } from "../terminal/Input";
@@ -12,6 +13,7 @@ export class Terminal extends Component {
   // Constants
   public static readonly HOSTNAME: string = "termdo";
   public static readonly CWD: string = "~";
+  public static readonly MARK: string = "#";
 
   // Properties
   private _hostRef = createRef<HTMLDivElement>();
@@ -42,8 +44,11 @@ export class Terminal extends Component {
   public get input() {
     return this._input;
   }
+  public get cursorPos() {
+    return this._cursorPos;
+  }
   public get prompt() {
-    return `${this.username}@${Terminal.HOSTNAME}:${Terminal.CWD}$ `;
+    return `${this.username}@${Terminal.HOSTNAME}:${Terminal.CWD}${Terminal.MARK} `;
   }
 
   // Setters
@@ -52,6 +57,9 @@ export class Terminal extends Component {
   }
   public set input(value: string) {
     this._input = value;
+  }
+  public set cursorPos(value: number) {
+    this._cursorPos = value;
   }
 
   constructor(props: {}) {
@@ -74,6 +82,7 @@ export class Terminal extends Component {
     this._term = new XTerm({
       cursorBlink: true,
       disableStdin: false,
+      convertEol: true,
       scrollback: 5000,
       fontFamily: "Cascadia Code, monospace",
       fontSize: 14,
@@ -160,6 +169,23 @@ export class Terminal extends Component {
       return;
     }
 
+    if (data.length > 1 && !data.startsWith(Ansi.ESCAPE)) {
+      const text = data
+        .replace(/\x1b\[200~|\x1b\[201~/g, "")
+        .replace(/\r\n?|\n/g, " ")
+        .trim();
+
+      if (text.length) {
+        this._input =
+          this._input.slice(0, this._cursorPos) +
+          text +
+          this._input.slice(this._cursorPos);
+        this._cursorPos += text.length;
+        Console.prompt(this);
+      }
+      return;
+    }
+
     switch (data) {
       case Key.ENTER: {
         Console.out(this, "");
@@ -187,13 +213,45 @@ export class Terminal extends Component {
         break;
       }
       default: {
-        if (!data.startsWith("\x1b")) {
+        if (data.startsWith(Ansi.ESCAPE)) {
+          switch (data) {
+            case Key.UP: {
+              const next = this._history[this._historyIndex + 1];
+              if (next != null) {
+                this._historyIndex += 1;
+                this._input = next;
+                this._cursorPos = this._input.length;
+                Console.prompt(this);
+              }
+              break;
+            }
+            case Key.DOWN: {
+              if (this._historyIndex > 0) {
+                this._historyIndex -= 1;
+                this._input = this._history[this._historyIndex]!;
+              } else {
+                this._historyIndex = -1;
+                this._input = "";
+              }
+              this._cursorPos = this._input.length;
+              Console.prompt(this);
+              break;
+            }
+            case Key.LEFT: {
+              Console.moveCursorLeft(this);
+              break;
+            }
+            case Key.RIGHT: {
+              Console.moveCursorRight(this);
+              break;
+            }
+          }
+        } else {
           this._input =
             this._input.slice(0, this._cursorPos) +
             data +
             this._input.slice(this._cursorPos);
           this._cursorPos += data.length;
-
           Console.prompt(this);
         }
         break;
