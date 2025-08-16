@@ -57,6 +57,14 @@ export class Console {
     Console.write(t, out);
   }
 
+  public static enter(t: Terminal): void {
+    const downCount = Console.promptLines - Console.cursorLine;
+    if (downCount > 0) {
+      Console.write(t, `\x1b[${downCount}B`);
+    }
+    Console.writeln(t, "");
+  }
+
   public static out(t: Terminal, output: string): void {
     Console.promptLines = 1;
 
@@ -69,16 +77,50 @@ export class Console {
 
   public static moveCursorLeft(t: Terminal): void {
     if (t.cursorPos > 0) {
+      const realCursorPos = t.cursorPos + t.prompt.length;
+      if (realCursorPos % t.term.cols === 0) {
+        Console.write(t, `\x1b[1A\x1b[${t.term.cols}C`);
+        Console.cursorLine -= 1;
+      } else {
+        Console.write(t, "\x1b[D");
+      }
       t.cursorPos -= 1;
-      Console.write(t, "\x1b[D");
     }
   }
 
   public static moveCursorRight(t: Terminal): void {
     if (t.cursorPos < t.input.length) {
+      const realCursorPos = t.cursorPos + t.prompt.length;
+      if ((realCursorPos + 1) % t.term.cols === 0) {
+        Console.write(t, `\x1b[1B\x1b[${t.term.cols}D`);
+        Console.cursorLine += 1;
+      } else {
+        Console.write(t, "\x1b[C");
+      }
       t.cursorPos += 1;
-      Console.write(t, "\x1b[C");
     }
+  }
+
+  public static moveCursorHome(t: Terminal): void {
+    t.cursorPos = 0;
+    if (this.cursorLine > 1) {
+      Console.write(t, `\x1b[${this.cursorLine - 1}A`);
+      Console.cursorLine = 1;
+    }
+    Console.write(t, `\x1b[${t.prompt.length + 1}G`);
+  }
+
+  public static moveCursorEnd(t: Terminal): void {
+    t.cursorPos = t.input.length;
+    if (this.cursorLine !== Console.promptLines) {
+      Console.write(t, `\x1b[${Console.promptLines - this.cursorLine}B`);
+      Console.cursorLine = Console.promptLines;
+    }
+    const totalLength = t.prompt.length + t.input.length;
+    const cols = Math.max(1, t.term.cols);
+    const targetCol = (totalLength % cols) + 1;
+    Console.write(t, `\x1b[${targetCol}G`);
+    
   }
 
   // >-----------------------------< Methods  ------------------------------< //
