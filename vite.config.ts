@@ -1,14 +1,25 @@
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 
-// https://vite.dev/config/
-export default defineConfig({
-  build: {
-    emptyOutDir: true,
-    outDir: "out",
-  },
-  plugins: [react()],
-  server: {
-    port: 8080,
-  },
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, ".", "");
+  const APP_PORT = parseInt((process.env["APP_PORT"] ?? env["APP_PORT"])!, 10);
+
+  return {
+    build: {
+      emptyOutDir: true,
+      outDir: "out",
+      minify: true,
+    },
+    plugins: [react()],
+    server: {
+      port: APP_PORT,
+      strictPort: true,
+    },
+    preview: {
+      port: APP_PORT,
+      strictPort: true,
+    },
+    envPrefix: ["CLIENT_"],
+  };
 });

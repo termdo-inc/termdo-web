@@ -1,2 +1,32 @@
-node_modules
-out
+*
+
+# >-----< INCLUDES >-----< #
+
+# [+]: Repo files
+!LICENSE.md
+!README.md
+
+# [+]: Source files
+!source/
+!source/**
+!index.html
+
+# [+]: Node files
+!package-lock.json
+!package.json
+
+# [+]: Config files
+!eslint.config.js
+!tsconfig.app.json
+!tsconfig.json
+!tsconfig.node.json
+!vite.config.ts
+
+# [+]: Docker files
+!compose.yaml
+
+# >-----< EXCLUDES >-----< #
+
+# [-]: MacOS files
+.DS_Store
+**/.DS_Store
