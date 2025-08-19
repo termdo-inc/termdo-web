@@ -1,0 +1,28 @@
+*
+
+# >-----< INCLUDES >-----< #
+
+# [+]: Install stage
+!package-lock.json
+!package.json
+
+# [+]: Build stage
+!public/
+!public/**
+!source/
+!source/**
+!index.html
+!package.json
+!tsconfig.app.json
+!tsconfig.json
+!vite.config.ts
+
+# [+]: Run stage
+!server/
+!server/**
+
+# >-----< EXCLUDES >-----< #
+
+# [-]: MacOS files
+.DS_Store
+**/.DS_Store

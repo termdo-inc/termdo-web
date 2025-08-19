@@ -2,8 +2,9 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, ".", "");
-  const APP_PORT = parseInt((process.env["APP_PORT"] ?? env["APP_PORT"])!, 10);
+  const env = loadEnv(mode, process.cwd(), "");
+
+  const APP_PORT = parseInt(env["APP_PORT"]!, 10);
 
   return {
     build: {
@@ -20,6 +21,6 @@ export default defineConfig(({ mode }) => {
       port: APP_PORT,
       strictPort: true,
     },
-    envPrefix: ["CLIENT_"],
+    envPrefix: ["PUBLIC_"],
   };
 });

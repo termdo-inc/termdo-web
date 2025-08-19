@@ -1,4 +1,4 @@
-import { Terminal } from "../components/Terminal";
+import { Terminal } from "../../components/Terminal";
 import { Ansi } from "./Ansi";
 import { Style } from "./Styles";
 
@@ -32,7 +32,7 @@ export class Console {
       `${Style.PROMPT_USERNAME}${t.username}` +
       `${Style.PROMPT_HOSTNAME}@${Terminal.HOSTNAME}` +
       `${Style.PROMPT_CWD}:${Terminal.CWD}` +
-      `${Style.PROMPT_MARK}${Terminal.MARK} `;
+      `${Style.PROMPT_MARK}${t.promptMark} `;
     out += promptColorized;
     out += Console.colorize(t.input);
 
@@ -120,7 +120,6 @@ export class Console {
     const cols = Math.max(1, t.term.cols);
     const targetCol = (totalLength % cols) + 1;
     Console.write(t, `\x1b[${targetCol}G`);
-    
   }
 
   // >-----------------------------< Methods  ------------------------------< //

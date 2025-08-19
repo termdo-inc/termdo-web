@@ -1,0 +1,13 @@
+name: termdo
+
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8000:80"
+
+networks:
+  default:
+    name: termdo-net

@@ -2,18 +2,17 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal as XTerm, type IDisposable } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { Component, createRef } from "react";
+import { Ansi } from "../app/helpers/Ansi";
+import { Command } from "../app/helpers/Command";
+import { Console } from "../app/helpers/Console";
+import { Input, type CommandParams } from "../app/helpers/Input";
+import { Key } from "../app/helpers/Key";
 import styles from "../styles/Terminal.module.css";
-import { Ansi } from "../terminal/Ansi";
-import { Command } from "../terminal/Command";
-import { Console } from "../terminal/Console";
-import { Input, type CommandParams } from "../terminal/Input";
-import { Key } from "../terminal/Key";
 
 export class Terminal extends Component {
   // Constants
   public static readonly HOSTNAME: string = "termdo";
   public static readonly CWD: string = "~";
-  public static readonly MARK: string = "#";
 
   // Properties
   private _hostRef = createRef<HTMLDivElement>();
@@ -23,9 +22,10 @@ export class Terminal extends Component {
 
   private _onDataDisposer: IDisposable | null = null;
   private _resizeObserver: ResizeObserver | null = null;
-  private _resizeFrameId: number = 0;
+  private _resizeFrameId = 0;
 
   private _username: string;
+  private _promptMark: string;
   private _input: string;
   private _cursorPos: number;
   private _history: string[];
@@ -41,6 +41,9 @@ export class Terminal extends Component {
   public get username() {
     return this._username;
   }
+  public get promptMark() {
+    return this._promptMark;
+  }
   public get input() {
     return this._input;
   }
@@ -48,11 +51,19 @@ export class Terminal extends Component {
     return this._cursorPos;
   }
   public get prompt() {
-    return `${this.username}@${Terminal.HOSTNAME}:${Terminal.CWD}${Terminal.MARK} `;
+    return `${this.username}@${Terminal.HOSTNAME}:${Terminal.CWD}${this._promptMark} `;
+  }
+  public get history() {
+    return this._history;
   }
 
   // Setters
   public set username(value: string) {
+    if (value == "root") {
+      this._promptMark = "#";
+    } else {
+      this._promptMark = "$";
+    }
     this._username = value;
   }
   public set input(value: string) {
@@ -66,6 +77,7 @@ export class Terminal extends Component {
     super(props);
 
     this._username = "root";
+    this._promptMark = "#";
     this._input = "";
     this._cursorPos = 0;
     this._history = [];
@@ -120,10 +132,14 @@ export class Terminal extends Component {
     this._term.open(this._hostRef.current);
 
     // Setup
-    document.fonts.ready.then(async () => {
-      this._fit?.fit();
-      this._term?.focus();
-    });
+    document.fonts.ready
+      .then(() => {
+        this._fit?.fit();
+        this._term?.focus();
+      })
+      .catch((error: unknown) => {
+        console.error("Error loading fonts:", error);
+      });
 
     // Initial prompt
     Console.welcome(this);
@@ -282,6 +298,34 @@ export class Terminal extends Component {
       }
       case "echo": {
         Command.echo(this, params.args);
+        break;
+      }
+      case "whoami": {
+        Command.whoami(this, params.args);
+        break;
+      }
+      case "which": {
+        Command.which(this, params.args);
+        break;
+      }
+      case "history": {
+        Command.history(this, params.args);
+        break;
+      }
+      case "date": {
+        Command.date(this, params.args);
+        break;
+      }
+      case "su": {
+        Command.su(this, params.args);
+        break;
+      }
+      case "adduser": {
+        Command.adduser(this, params.args);
+        break;
+      }
+      case "exit": {
+        Command.exit(this, params.args);
         break;
       }
       default: {

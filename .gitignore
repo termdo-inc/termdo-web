@@ -9,12 +9,20 @@
 !LICENSE.md
 !README.md
 
+# [+]: Server files
+!server/
+!server/**
+
 # [+]: Source files
 !public/
 !public/**
 !source/
 !source/**
 !index.html
+
+# [+]: Script files
+!scripts/
+!scripts/**
 
 # [+]: Node files
 !.nvmrc
@@ -29,6 +37,9 @@
 !tsconfig.json
 !tsconfig.node.json
 !vite.config.ts
+
+# [+]: Environment files
+!.env.example
 
 # [+]: Docker files
 !.dockerignore

@@ -16,7 +16,7 @@
   --font-title: "Alfa Slab One", "Georgia", serif;
   --font-subtitle: "Cal Sans", Arial, sans-serif;
   --font-body: "Geologica", system-ui, sans-serif;
-  --font-mono: "Google Sans Code", "Courier New", monospace;
+  --font-mono: "Cascadia Code", "Courier New", monospace;
 
   /* Font Sizes */
   --text-xs: 0.75rem;

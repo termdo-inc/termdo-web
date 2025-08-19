@@ -1,26 +1,34 @@
 {
   "compilerOptions": {
+    /* Projects */
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
-    "target": "ES2023",
-    "lib": ["ES2023"],
-    "module": "ESNext",
-    "skipLibCheck": true,
 
-    /* Bundler mode */
+    /* Language and Environment */
+    "target": "ES2024",
+    "lib": ["ES2024"],
+    "moduleDetection": "force",
+
+    /* Modules */
+    "module": "ESNext",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "moduleDetection": "force",
+
+    /* Emit */
     "noEmit": true,
+
+    /* Interoperability */
+    "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
 
-    /* Linting */
+    /* Type Checking */
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "strictBindCallApply": true,
     "strictPropertyInitialization": true,
+    "strictBuiltinIteratorReturn": true,
     "noImplicitThis": true,
     "useUnknownInCatchVariables": true,
     "alwaysStrict": true,
@@ -31,7 +39,10 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true
+    "noPropertyAccessFromIndexSignature": true,
+
+    /* Completeness */
+    "skipLibCheck": true
   },
   "include": ["vite.config.ts"]
 }
