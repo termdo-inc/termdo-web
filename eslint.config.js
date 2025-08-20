@@ -33,6 +33,7 @@ export default tseslint.config([
     rules: {
       "no-control-regex": "off",
       "@typescript-eslint/adjacent-overload-signatures": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
       "@typescript-eslint/no-extraneous-class": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
       "@typescript-eslint/no-unsafe-enum-comparison": "off",
