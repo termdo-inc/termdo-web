@@ -6,6 +6,7 @@
 !.gitignore
 
 # [+]: Repo files
+!CHANGELOG.md
 !LICENSE.md
 !README.md
 
@@ -19,10 +20,6 @@
 !source/
 !source/**
 !index.html
-
-# [+]: Script files
-!scripts/
-!scripts/**
 
 # [+]: Node files
 !.nvmrc
