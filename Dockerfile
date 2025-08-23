@@ -30,6 +30,7 @@ COPY \
   package.json \
   tsconfig.app.json \
   tsconfig.json \
+  tsconfig.node.json \
   vite.config.ts ./
 
 RUN \
@@ -41,6 +42,4 @@ RUN \
 FROM nginx:1.29-alpine-slim AS runner
 
 COPY --from=builder /app/out/ /usr/share/nginx/html/
-COPY server/nginx.conf.template /etc/nginx/templates/
-
-ENTRYPOINT ["nginx", "-g", "daemon off;"]
+COPY server/nginx.conf.template /etc/nginx/templates/default.conf.template

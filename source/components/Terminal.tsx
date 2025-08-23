@@ -7,6 +7,8 @@ import { Command } from "../app/helpers/Command";
 import { Console } from "../app/helpers/Console";
 import { Input, type CommandParams } from "../app/helpers/Input";
 import { Key } from "../app/helpers/Key";
+import { ApiService } from "../app/services/ApiService";
+import { StorageService } from "../app/services/StorageService";
 import styles from "../styles/Terminal.module.css";
 
 export class Terminal extends Component {
@@ -58,14 +60,6 @@ export class Terminal extends Component {
   }
 
   // Setters
-  public set username(value: string) {
-    if (value == "root") {
-      this._promptMark = "#";
-    } else {
-      this._promptMark = "$";
-    }
-    this._username = value;
-  }
   public set input(value: string) {
     this._input = value;
   }
@@ -149,6 +143,23 @@ export class Terminal extends Component {
     this._onDataDisposer = this._term.onData(this.onData.bind(this));
     this._resizeObserver = new ResizeObserver(this.onResize.bind(this));
     this._resizeObserver.observe(this._hostRef.current);
+
+    // Initial auth state
+    ApiService.refresh()
+      .then((result) => {
+        if (result.isRight()) {
+          this.sessionStarted(StorageService.getUsername() ?? "?????");
+          Console.out(this, "");
+          Console.out(this, "Session restored");
+          Console.out(this, "");
+          Console.prompt(this);
+        } else {
+          this.sessionEnded();
+        }
+      })
+      .catch(() => {
+        this.sessionEnded();
+      });
   }
 
   override render() {
@@ -166,7 +177,26 @@ export class Terminal extends Component {
     this._term?.dispose();
   }
 
-  // >-----------------------------< Methods  ------------------------------< //
+  public sessionStarted(username: string): void {
+    StorageService.saveUsername(username);
+    this._username = username;
+    this._promptMark = "$";
+  }
+
+  public sessionEnded(): void {
+    StorageService.clearUsername();
+    this._username = "root";
+    this._promptMark = "#";
+  }
+
+  public sessionExpired(): void {
+    StorageService.clearUsername();
+    Console.error(this, "Session expired");
+    this._username = "root";
+    this._promptMark = "#";
+  }
+
+  // >-------------------------< Private Methods >--------------------------< //
 
   private onResize(): void {
     if (this._resizeFrameId !== 0) {
@@ -179,7 +209,7 @@ export class Terminal extends Component {
     });
   }
 
-  private onData(data: string): void {
+  private async onData(data: string): Promise<void> {
     if (this._term === null) {
       console.error("Terminal is not initialized.");
       return;
@@ -212,7 +242,7 @@ export class Terminal extends Component {
           }
         }
         this._historyIndex = -1;
-        this.onCommand(Input.parse(line));
+        await this.onCommand(Input.parse(line));
         this._input = "";
         this._cursorPos = 0;
         Console.prompt(this);
@@ -283,7 +313,7 @@ export class Terminal extends Component {
     }
   }
 
-  private onCommand(params: CommandParams): void {
+  private async onCommand(params: CommandParams): Promise<void> {
     switch (params.command) {
       case "": {
         return;
@@ -317,15 +347,35 @@ export class Terminal extends Component {
         break;
       }
       case "su": {
-        Command.su(this, params.args);
+        await Command.su(this, params.args);
         break;
       }
       case "adduser": {
-        Command.adduser(this, params.args);
+        await Command.adduser(this, params.args);
         break;
       }
       case "exit": {
-        Command.exit(this, params.args);
+        await Command.exit(this, params.args);
+        break;
+      }
+      case "ls": {
+        await Command.ls(this, params.args);
+        break;
+      }
+      case "touch": {
+        await Command.touch(this, params.args);
+        break;
+      }
+      case "cat": {
+        await Command.cat(this, params.args);
+        break;
+      }
+      case "rm": {
+        await Command.rm(this, params.args);
+        break;
+      }
+      case "edit": {
+        await Command.edit(this, params.args);
         break;
       }
       default: {

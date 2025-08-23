@@ -1,25 +1,21 @@
-import { IModel } from "../../app/interfaces/IModel";
-
-export class AccountModel extends IModel {
+export class AccountModel {
   constructor(
     public readonly accountId: number,
     public readonly username: string,
-  ) {
-    super();
-  }
+  ) {}
 
-  public static fromJson(json: unknown): AccountModel {
-    if (!this.isValidJson(json)) {
-      throw new Error("Invalid JSON for AccountModel");
+  public static fromData(data: unknown): AccountModel | Error {
+    if (!AccountModel.isValidData(data)) {
+      return Error();
     }
-    return new AccountModel(json.accountId, json.username);
+    return new AccountModel(data.accountId, data.username);
   }
 
-  public static override isValidJson(json: unknown): json is AccountModel {
-    if (typeof json !== "object" || json === null) {
+  private static isValidData(data: unknown): data is AccountModel {
+    if (typeof data !== "object" || data === null) {
       return false;
     }
-    const model = json as AccountModel;
+    const model = data as AccountModel;
     return (
       typeof model.accountId === "number" && typeof model.username === "string"
     );

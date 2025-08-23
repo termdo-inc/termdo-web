@@ -1,5 +1,6 @@
 import { Terminal } from "../../components/Terminal";
 import { Ansi } from "./Ansi";
+import { Censor } from "./Censor";
 import { Style } from "./Styles";
 
 export class Console {
@@ -14,6 +15,8 @@ export class Console {
   }
 
   public static prompt(t: Terminal) {
+    const censoredInput = this.censor(t.input);
+
     let out = "";
 
     const downCount = this.promptLines - this.cursorLine;
@@ -34,10 +37,10 @@ export class Console {
       `${Style.PROMPT_CWD}:${Terminal.CWD}` +
       `${Style.PROMPT_MARK}${t.promptMark} `;
     out += promptColorized;
-    out += Console.colorize(t.input);
+    out += Console.colorize(censoredInput);
 
     const cols = Math.max(1, t.term.cols);
-    const totalLength = t.prompt.length + t.input.length;
+    const totalLength = t.prompt.length + censoredInput.length;
     Console.promptLines = Math.max(1, Math.ceil(totalLength / cols));
     Console.cursorLine = Console.promptLines;
 
@@ -69,6 +72,11 @@ export class Console {
     Console.promptLines = 1;
 
     Console.writeln(t, output);
+  }
+
+  public static error(t: Terminal, output: string): void {
+    Console.promptLines = 1;
+    Console.writeln(t, `${Style.ERROR}Error: ${output}${Ansi.RESET}`);
   }
 
   public static clear(t: Terminal): void {
@@ -122,7 +130,7 @@ export class Console {
     Console.write(t, `\x1b[${targetCol}G`);
   }
 
-  // >-----------------------------< Methods  ------------------------------< //
+  // >-------------------------< Private Methods >--------------------------< //
 
   private static write(t: Terminal, output: string): void {
     t.term.write(output);
@@ -132,53 +140,90 @@ export class Console {
     t.term.write(`${output}\r\n`);
   }
 
+  private static censor(input: string): string {
+    for (const [command, indices] of Censor.info) {
+      let i = 0;
+      while (i < input.length && input[i] === " ") i++;
+      const start = i;
+      while (i < input.length && input[i] !== " ") i++;
+      if (input.slice(start, i) !== command) continue;
+      const chars = input.split("");
+      let wordIdx = 0;
+      while (i < input.length) {
+        while (i < input.length && input[i] === " ") i++;
+        wordIdx++;
+        const start = i;
+        while (i < input.length && input[i] !== " ") i++;
+        const end = i;
+        if (indices.includes(wordIdx)) {
+          for (let k = start; k < end; k++) chars[k] = "*";
+        }
+      }
+      return chars.join("");
+    }
+    return input;
+  }
+
   private static colorize(input: string): string {
     const Style = {
       cmd: `${Ansi.BEGIN}${Ansi.FG_BR_BLUE}${Ansi.END}`,
       opt: `${Ansi.BEGIN}${Ansi.FG_BR_GREEN}${Ansi.END}`,
       arg: `${Ansi.BEGIN}${Ansi.FG_BR_CYAN}${Ansi.END}`,
       val: `${Ansi.BEGIN}${Ansi.FG_BR_MAGENTA}${Ansi.END}`,
+      esc: `${Ansi.BEGIN}${Ansi.FG_RED}${Ansi.END}`,
     };
 
     let out = Style.cmd;
 
     enum Mode {
-      Command,
-      Option,
-      Arg,
-      Value,
-      Idle,
+      COMMAND,
+      OPTION,
+      ARG,
+      VALUE,
+      IDLE,
     }
 
     const set = (next: Mode) => {
-      if (mode === next) return;
       mode = next;
       switch (mode) {
-        case Mode.Command:
+        case Mode.COMMAND:
           out += Style.cmd;
           break;
-        case Mode.Option:
+        case Mode.OPTION:
           out += Style.opt;
           break;
-        case Mode.Arg:
+        case Mode.ARG:
           out += Style.arg;
           break;
-        case Mode.Value:
+        case Mode.VALUE:
           out += Style.val;
           break;
-        case Mode.Idle:
+        case Mode.IDLE:
           break;
       }
     };
 
-    let mode: Mode = Mode.Command;
+    let mode: Mode = Mode.COMMAND;
     let atTokenStart = true;
     let inSingle = false;
     let inDouble = false;
 
+    let escaped = false;
     for (const ch of input) {
+      if (ch === "\\") {
+        out += Style.esc + ch;
+        escaped = true;
+        continue;
+      }
+      if (escaped) {
+        escaped = false;
+        out += ch;
+        set(mode);
+        continue;
+      }
+
       if (!inSingle && !inDouble && (ch === "'" || ch === '"')) {
-        set(Mode.Value);
+        set(Mode.VALUE);
         if (ch === "'") inSingle = true;
         else inDouble = true;
         out += ch;
@@ -203,27 +248,26 @@ export class Console {
       if (ch === " ") {
         out += ch;
         atTokenStart = true;
-        set(Mode.Idle);
+        set(Mode.IDLE);
         continue;
       }
 
       if (atTokenStart) {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (mode !== Mode.Command) {
-          set(ch === "-" ? Mode.Option : Mode.Arg);
+        if (mode !== Mode.COMMAND) {
+          set(ch === "-" ? Mode.OPTION : Mode.ARG);
         }
         atTokenStart = false;
       }
 
       if (ch === "=") {
         out += ch;
-        set(Mode.Value);
+        set(Mode.VALUE);
         continue;
       }
 
       out += ch;
     }
-
     return out + Ansi.RESET;
   }
 }

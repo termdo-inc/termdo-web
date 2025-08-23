@@ -1,8 +1,8 @@
 export class Hostnames {
   constructor(
-    public readonly gatewayApi: string | null,
-    public readonly tasksApi: string | null,
-    public readonly authApi: string | null,
+    public readonly gatewayApi?: string,
+    public readonly authApi?: string,
+    public readonly tasksApi?: string,
   ) {}
 
   public static isValidJson(json: unknown): json is Hostnames {
@@ -11,9 +11,10 @@ export class Hostnames {
     }
     const model = json as Hostnames;
     return (
-      (model.gatewayApi === null || typeof model.gatewayApi === "string") &&
-      (model.tasksApi === null || typeof model.tasksApi === "string") &&
-      (model.authApi === null || typeof model.authApi === "string")
+      (model.gatewayApi === undefined ||
+        typeof model.gatewayApi === "string") &&
+      (model.authApi === undefined || typeof model.authApi === "string") &&
+      (model.tasksApi === undefined || typeof model.tasksApi === "string")
     );
   }
 }
