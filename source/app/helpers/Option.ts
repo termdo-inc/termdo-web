@@ -50,7 +50,7 @@ export class Option {
           options.push({ option, value });
         } else {
           const option = arg.substring(1);
-          if (option.length < 1) {
+          if (option.length !== 1) {
             continue;
           }
           if (index + 1 < args.length) {
