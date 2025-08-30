@@ -37,6 +37,12 @@ RUN \
   npm run build && \
   npm prune --omit=dev
 
+# >-----< TEST STAGE >-----< #
+
+FROM builder AS tester
+
+RUN npm run test
+
 # >-----< RUN STAGE >-----< #
 
 FROM nginx:1.29-alpine-slim AS runner

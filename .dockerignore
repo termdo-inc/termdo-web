@@ -18,6 +18,8 @@
 !tsconfig.node.json
 !vite.config.ts
 
+# [+]: Test stage
+
 # [+]: Run stage
 !server/
 !server/**
