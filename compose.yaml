@@ -2,7 +2,11 @@ name: termdo
 
 services:
   web:
-    build: .
+    build:
+      context: .
+      args:
+        PUBLIC_APP_ENV: ${PUBLIC_APP_ENV}
+        PUBLIC_APP_VER: ${PUBLIC_APP_VER}
     restart: unless-stopped
     env_file: .env
     ports:
