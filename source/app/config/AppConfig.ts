@@ -6,5 +6,5 @@ export class AppConfig {
   public static readonly VER =
     import.meta.env.PUBLIC_APP_VER.length > 0
       ? import.meta.env.PUBLIC_APP_VER
-      : "N/A";
+      : "latest";
 }

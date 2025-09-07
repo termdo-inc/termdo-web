@@ -47,12 +47,27 @@ The Gateway handles: cookie‑based browser auth (`X-Client-Browser: 1`), token 
 Copy `.env.example` to `.env` and set:
 
 - `APP_PORT`: Port for Vite dev/preview (e.g., `5173`, `8080`) — used by Vite config
-- `PUBLIC_APP_ENV`: Optional label in footer (defaults to `local`)
-- `PUBLIC_APP_VER`: Optional label in footer (defaults to `latest`)
+- `PUBLIC_APP_ENV`: Build‑time environment label shown in the footer (e.g., `local`, `staging`, `prod`). If unset, defaults to `local`. Embedded into the bundle at build time; changing it requires a rebuild.
+- `PUBLIC_APP_VER`: Build‑time version string shown in the footer (e.g., `1.2.3`, git SHA). If unset, defaults to `latest`. Embedded into the bundle at build time; changing it requires a rebuild.
 - `API_HOST`: Hostname for the Gateway (used by Nginx in container)
 - `API_PORT`: Port for the Gateway (used by Nginx in container)
 
-Note: Only variables prefixed with `PUBLIC_` are exposed to the client bundle (per `envPrefix` in `vite.config.ts`) and are embedded at build time into the static files. Changing them requires a rebuild. The app only calls `/api/*`; when running via Docker, Nginx uses `API_HOST`/`API_PORT` to reach the gateway. The Vite dev server does not proxy `/api` by default.
+Note: Only variables prefixed with `PUBLIC_` are exposed to the client bundle (per `envPrefix` in `vite.config.ts`) and are embedded at build time into the static files. The app only calls `/api/*`; when running via Docker, Nginx uses `API_HOST`/`API_PORT` to reach the gateway. The Vite dev server does not proxy `/api` by default.
+
+Build arguments: `PUBLIC_APP_ENV` and `PUBLIC_APP_VER`
+- Purpose: Both values are displayed in the footer via `AppConfig` to indicate the deployment environment and version of the web client.
+- Build‑time only: These are read during the Vite build. Updating them requires rebuilding the app (they cannot be changed at runtime of the Nginx container).
+- Dockerfile: They are declared as `ARG` and forwarded to `ENV` so Vite can read them during `npm run build`.
+
+Examples
+- With Docker Compose (recommended): set them in `.env` and rebuild.
+  - `.env`:
+    - `PUBLIC_APP_ENV=prod`
+    - `PUBLIC_APP_VER=1.2.3`
+  - `docker compose build --no-cache && docker compose up`
+- With `docker build` directly:
+  - `docker build --build-arg PUBLIC_APP_ENV=staging --build-arg PUBLIC_APP_VER=$(git rev-parse --short HEAD) -t termdo-web:staging .`
+- Local Vite (no Docker): place them in `.env` so the dev server and `npm run build` can read them, e.g. `PUBLIC_APP_ENV=local`, `PUBLIC_APP_VER=dev`.
 
 ## Quick Start
 
