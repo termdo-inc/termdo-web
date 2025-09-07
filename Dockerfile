@@ -20,6 +20,12 @@ RUN npm clean-install
 
 FROM base AS builder
 
+ARG PUBLIC_APP_ENV
+ARG PUBLIC_APP_VER
+
+ENV PUBLIC_APP_ENV=${PUBLIC_APP_ENV}
+ENV PUBLIC_APP_VER=${PUBLIC_APP_VER}
+
 WORKDIR /app/
 
 COPY --from=installer /app/node_modules/ node_modules/

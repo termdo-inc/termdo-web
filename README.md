@@ -1,103 +1,159 @@
 # Termdo Web
 
-Terminal-styled React web client for Termdo. Talks to the public Gateway API under `/api`, which proxies to the internal Auth and Tasks microservices.
+Terminal‑styled React web client for Termdo. It talks only to the public Gateway API under `/api`, which then proxies to the internal Auth and Tasks microservices. The production image serves a static build via Nginx and forwards `/api/*` to the gateway.
 
-This app works with:
+## Related Repositories
 
 - termdo-gateway-api: Public API gateway and auth flow
 - termdo-auth-api: Authentication and JWT issuance
 - termdo-tasks-api: Task CRUD API
 - termdo-db: PostgreSQL backing store (used by APIs)
-- termdo-infra: Infrastructure and deployment
+- termdo-compose: Local multi‑service Docker Compose for the full stack
+- termdo-chart / termdo-ci-chart: Helm charts for k8s deployment and CI
 
 ## Features
 
-- Terminal UI powered by xterm.js with custom theme
-- Login, Signup, Logout, and full Tasks CRUD via Gateway
-- Browser-friendly auth: token stored in HTTP-only cookie by the gateway
-- Hostname telemetry: logs which services responded using aggregated `hostnames`
-- Static build served by Nginx with strict security headers and `/api` proxy
+- Terminal UI: xterm.js with a custom theme and sizing (fit addon)
+- Auth flows: login, signup, refresh, logout through the Gateway
+- Tasks: list, view, create, edit, delete with rich table rendering
+- Browser‑aware auth: gateway stores JWT in an HTTP‑only cookie for browser clients and strips it from the JSON body
+- Debuggability: logs an aggregated `hostnames` object from gateway/auth/tasks
+- Hardened static serving: Nginx adds CSP and other security headers
+
+## Architecture
+
+Browser → Nginx (serves SPA, proxies `/api/*`) → Gateway API → Auth API / Tasks API → PostgreSQL
+
+The Gateway handles: cookie‑based browser auth (`X-Client-Browser: 1`), token forwarding, logout, and `hostnames` aggregation.
 
 ## Tech Stack
 
 - UI: React 19, TypeScript, Vite 7
-- Terminal: `@xterm/xterm` + `@xterm/addon-fit`
-- Runtime (prod): Nginx (Alpine) serving static assets with `/api` proxy to the gateway
-- Lint/Format: ESLint + Prettier
+- Terminal: `@xterm/xterm` and `@xterm/addon-fit`
+- Prod runtime: Nginx (Alpine), `/usr/share/nginx/html` + `/api` proxy
+- Tooling: ESLint + Prettier, TypeScript project refs, Docker multi‑stage
 
-## Getting Started
+## Repository Layout
 
-### Prerequisites
+- `source/components/`: React components (`Terminal`, `Main`, `Footer`, `App`)
+- `source/app/`: Client logic (commands, services, helpers, config)
+- `source/common/`: Shared API models and schemas (`ApiResponse`, `Hostnames`)
+- `public/`: Static assets (fonts, favicon)
+- `server/nginx.conf.template`: Nginx config (static + `/api` proxy and headers)
+- `vite.config.ts`: Vite build/preview/server with `outDir=out`
 
-- Node `v24.6.0` (or `nvm use`)
-- Docker and Docker Compose (recommended to get `/api` proxy working)
-- `.env` file (see `.env.example`)
+## Environment
 
-### Environment Variables
+Copy `.env.example` to `.env` and set:
 
-- `APP_PORT`: Port for the local dev server or preview
-- `API_HOST`: Hostname for the Gateway API (used by Nginx in the container)
-- `API_PORT`: Port for the Gateway API (used by Nginx in the container)
+- `APP_PORT`: Port for Vite dev/preview (e.g., `5173`, `8080`) — used by Vite config
+- `PUBLIC_APP_ENV`: Optional label in footer (defaults to `local`)
+- `PUBLIC_APP_VER`: Optional label in footer (defaults to `latest`)
+- `API_HOST`: Hostname for the Gateway (used by Nginx in container)
+- `API_PORT`: Port for the Gateway (used by Nginx in container)
 
-Create `.env` by copying `.env.example` and setting the values.
+Note: Only variables prefixed with `PUBLIC_` are exposed to the client bundle (per `envPrefix` in `vite.config.ts`) and are embedded at build time into the static files. Changing them requires a rebuild. The app only calls `/api/*`; when running via Docker, Nginx uses `API_HOST`/`API_PORT` to reach the gateway. The Vite dev server does not proxy `/api` by default.
 
-### Run with Docker Compose (recommended)
+## Quick Start
 
-This builds the app and serves it through Nginx. The `/api` path is proxied to the Gateway.
+### Option A — Full Stack via termdo-compose (recommended)
+
+Use the sibling `termdo-compose` repo to launch DB, Auth, Tasks, Gateway, and this Web app together on the shared `termdo-net` network.
+
+1) Follow termdo-compose’s README to create env files and start the stack:
+
+   - Web UI on `http://localhost:8000`
+   - Gateway on `http://localhost:3000`
+
+2) In this repo, no extra steps are required; Compose builds and runs the web image.
+
+### Option B — This repo’s Compose
+
+This builds the SPA and serves it through Nginx with `/api` proxying to the gateway.
 
 ```bash
 docker compose up --build
 ```
 
 Defaults:
-- Web is served on `http://localhost:8000`
-- Nginx proxies `/api/*` to `http://${API_HOST}:${API_PORT}` and sets `X-Client-Browser: 1` so the gateway stores JWT in a cookie.
-- Ensure `termdo-gateway-api` is running and reachable (preferably on the shared `termdo-net` network). Set `API_HOST` to `gateway-api` if both Compose projects use `name: termdo` and the shared `termdo-net`.
+- Web served on `http://localhost:8000`
+- `/api/*` is proxied to `http://${API_HOST}:${API_PORT}`
+- Header `X-Client-Browser: 1` is added by Nginx so the gateway stores JWT in an HTTP‑only cookie
 
-### Local Build + Run using Docker (no Compose)
+Ensure `termdo-gateway-api` is running and reachable on the same Docker network. If both projects use `name: termdo`, set `API_HOST=gateway-api` and they will discover each other via `termdo-net`.
+
+### Option C — Docker without Compose
 
 ```bash
 npm ci
 npm run build
 docker build -t termdo-web:local .
-docker run --rm -e API_HOST=localhost -e API_PORT=3000 -p 8000:80 termdo-web:local
+docker run --rm \
+  -e API_HOST=localhost -e API_PORT=3000 \
+  -p 8000:80 termdo-web:local
 ```
 
-Then start the gateway separately on port `3000`.
+Run the gateway separately on port `3000`.
 
-### Local Development (Vite)
+### Option D — Local Development (Vite)
 
 ```bash
 npm ci
-npm run watch   # Vite dev server on APP_PORT
+cp .env.example .env   # set APP_PORT
+npm run watch          # dev server on APP_PORT
 ```
 
-Note: The Vite dev server does not provide the `/api` proxy. For end-to-end flows, prefer Docker (Nginx) so `/api` routes to the Gateway. Alternatively, run a local reverse proxy or adjust Vite to proxy `/api` to the gateway.
+Notes:
+- The Vite dev server does not proxy `/api`. For end‑to‑end flows, prefer Docker (Nginx) or add a Vite proxy for `/api` pointing to the gateway.
+- `npm run dev` runs `vite preview` (serves the built SPA from `out`); run `npm run build` first.
 
-## App Behavior
+## Terminal Commands
 
-- All API requests go to `/api/...` and are proxied by Nginx to the Gateway API.
-- The Gateway attaches/refreshes an HTTP-only `token` cookie for browser clients and strips the token from the JSON body.
-- The app displays and logs `hostnames` of responding services for easier debugging.
+Built‑in commands are shown by `help` and include:
 
-## Security Headers (Nginx)
+- `help`: List commands
+- `echo <text>`: Print text
+- `whoami`: Current username (`root` by default)
+- `which <cmd>`: Show a fake path for demo
+- `history`: Show command history
+- `date`: ISO timestamp
+- `su <username> [password]`: Login (use `su root` to return to root)
+- `adduser <username> <password>`: Create a user and login
+- `exit`: Logout current user
+- `ls [--sort <field>] [--order <asc|desc>] [--completed <true|false>]`: List tasks
+- `touch "<title>" "<description>" [--completed]`: Create task
+- `cat <task-id>`: Show task details
+- `edit <task-id> "<title>" "<description>" [--completed <true|false>]`: Edit task
+- `rm <task-id>`: Delete task
 
-- Adds CSP, Referrer-Policy, X-Content-Type-Options, COOP/CORP, and a minimal Permissions-Policy.
-- Static routes fallback to `index.html` for SPA behavior.
+Authentication‑gated commands require a non‑root session (login or signup first).
 
-## Development
+## Nginx Behavior
 
-- Lint: `npm run lint`
-- Format: `npm run format`
-- Clean: `npm run clean`
-- Build: `npm run build`
-- Preview: `npm run dev` (serves the compiled app on `APP_PORT`)
+- Serves static files and SPA fallback (`try_files ... /index.html`)
+- Security headers: CSP, Referrer‑Policy, X‑Content‑Type‑Options, COOP/CORP, Permissions‑Policy
+- Proxies `/api/*` to `http://${API_HOST}:${API_PORT}/` and adds `X-Client-Browser: 1`
+
+## Development Scripts
+
+- `npm run lint`: ESLint
+- `npm run format`: Prettier
+- `npm run clean`: Remove `out`
+- `npm run build`: Type‑check then Vite build to `out`
+- `npm run watch`: Vite dev server (`--host`) on `APP_PORT`
+- `npm run dev`: Vite preview on `APP_PORT` (serves `out`)
 
 ## Integration Notes
 
-- This client expects the Gateway to expose `/auth` and `/tasks` routes and to be reachable as configured via `API_HOST` and `API_PORT`.
-- Gateway should run with `COOKIE_IS_SECURE=true` in production.
-- All services should join the shared `termdo-net` network for name resolution across Compose projects.
+- The web client only calls `/api/*`; the gateway must expose `/auth/*` and `/tasks/*` and be reachable from the web container.
+- Gateway runs best with `COOKIE_IS_SECURE=true` behind HTTPS in production.
+- For multi‑container local dev, run everything on the `termdo-net` network (as in `termdo-compose`).
+
+## Troubleshooting
+
+- 401/Session expired: login again (`su <user> <pass>`), confirm gateway reachable, and that the browser cookie domain/path matches.
+- No `/api` in dev: use Docker (Nginx) or add a Vite proxy for `/api`.
+- Port conflicts: change `APP_PORT` (dev/preview) or `ports` in Compose.
 
 ## License
 
