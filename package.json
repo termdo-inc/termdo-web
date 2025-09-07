@@ -1,6 +1,6 @@
 {
   "name": "termdo-web",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Terminal styled web client for interacting with the termdo task management system",
   "homepage": "https://github.com/termdo-inc/termdo-web#readme",
   "bugs": {
